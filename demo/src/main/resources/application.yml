@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/events;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+jwt:
+  # Demo-only fallback; set JWT_SECRET to a private random string (64+ bytes) in production.
+  secret: ${JWT_SECRET:replace-this-demo-secret-before-production-with-a-long-random-64-byte-value}
+  expiration: 86400000
+
+app:
+  geocoding:
+    base-url: ${GEOCODING_BASE_URL:https://nominatim.openstreetmap.org}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/eventdb}
+    username: ${SPRING_DATASOURCE_USERNAME:eventuser}
+    password: ${SPRING_DATASOURCE_PASSWORD:eventpass}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: h2
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    username: sa
+    password:

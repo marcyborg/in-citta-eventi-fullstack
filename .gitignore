@@ -1,0 +1,40 @@
+# Java / Maven
+**/target/
+*.class
+*.jar
+*.war
+.mvn/wrapper/maven-wrapper.jar
+
+# Angular / Node: keep TypeScript source and package-lock.json
+**/node_modules/
+**/dist/
+**/.angular/
+**/coverage/
+**/.cache/
+**/*.tsbuildinfo
+event-frontend/**/*.js
+event-frontend/**/*.js.map
+event-frontend/**/*.mjs
+event-frontend/**/*.cjs
+
+# Local databases and runtime output
+**/data/
+*.mv.db
+*.trace.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# IDE and OS files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

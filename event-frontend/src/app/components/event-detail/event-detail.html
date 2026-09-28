@@ -1,0 +1,40 @@
+<section class="detail">
+  <a routerLink="/" class="back">← Torna agli eventi</a>
+  @if (loading) {
+    <p>Caricamento evento…</p>
+  } @else if (event) {
+    <span class="category">{{ event.categoria }}</span>
+    <h1>{{ event.titolo }}</h1>
+    <div class="detail__meta">
+      <div><span class="eyebrow">QUANDO</span><strong>{{ event.data | date:'EEEE d MMMM yyyy, HH:mm' }}</strong></div>
+      <div><span class="eyebrow">DOVE</span><strong>{{ event.luogo }}</strong></div>
+    </div>
+    <h2>Informazioni</h2>
+    <p class="description">{{ event.descrizione || 'Nessuna descrizione disponibile.' }}</p>
+    <section class="map-section" aria-labelledby="map-title">
+      <h2 id="map-title">Dove si trova</h2>
+      @if (mapLatitude != null && mapLongitude != null) {
+        <app-event-map [latitude]="mapLatitude" [longitude]="mapLongitude" />
+        <p class="map-note">Posizione indicativa. Verifica l'indirizzo con l'organizzatore.</p>
+      } @else {
+        <p>Questo evento non ha ancora una posizione salvata sulla mappa.</p>
+        <button class="locate" type="button" (click)="locate()" [disabled]="locating" data-testid="button-locate-detail">
+          {{ locating ? 'Localizzazione in corso…' : 'Localizza il luogo sulla mappa' }}
+        </button>
+        <p class="map-external"><a [href]="'https://www.openstreetmap.org/search?query=' + encodeURIComponent(event.luogo)"
+             target="_blank" rel="noopener noreferrer">Cerca il luogo su OpenStreetMap ↗</a></p>
+      }
+      @if (mapError) { <p class="error" role="alert">{{ mapError }}</p> }
+    </section>
+    @if (auth.getToken()) {
+      <div class="actions">
+        <a class="primary" [routerLink]="['/new-event']" [queryParams]="{edit:event.id}">Modifica evento</a>
+        <button type="button" class="danger" (click)="deleteEvent()" [disabled]="deleting">Elimina evento</button>
+      </div>
+    }
+  } @else {
+    <div class="state" role="alert"><h1>Evento non disponibile</h1><p>{{ error }}</p>
+      <a routerLink="/" class="primary">Torna all'agenda</a></div>
+  }
+  @if (event && error) { <p class="error" role="alert">{{ error }}</p> }
+</section>

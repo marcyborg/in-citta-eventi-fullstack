@@ -1,0 +1,41 @@
+name: Backend Spring Boot + Frontend Angular
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    name: Test backend Java
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: demo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: demo/pom.xml
+      - run: mvn --batch-mode test
+
+  frontend:
+    name: Test e build frontend Angular
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: event-frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: event-frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test -- --watch=false --browsers=ChromeHeadless
+        env:
+          CHROME_BIN: /usr/bin/google-chrome

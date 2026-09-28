@@ -1,0 +1,74 @@
+<section class="intro">
+  <div>
+    <p class="eyebrow">AGENDA CITTADINA</p>
+    <h1>La città, da vivere.</h1>
+    <p>Concerti, sport, teatro e appuntamenti da scoprire. Trova il prossimo evento e il suo luogo sulla mappa.</p>
+  </div>
+  <a class="intro__link" routerLink="/new-event" data-testid="link-publish">Proponi un evento <span aria-hidden="true">↗</span></a>
+</section>
+
+<section class="listing" aria-labelledby="events-title">
+  <div class="listing__heading">
+    <div>
+      <p class="eyebrow">SCOPRI COSA SUCCEDE</p>
+      <h2 id="events-title">Eventi in programma</h2>
+    </div>
+    @if (!loading && !error) { <span class="count" data-testid="text-count">{{ totalElements }} eventi</span> }
+  </div>
+
+  <form class="filters" (ngSubmit)="applyFilters()">
+    <label>Categoria
+      <select name="category" [(ngModel)]="category" data-testid="select-category">
+        <option value="">Tutte le categorie</option>
+        <option value="concerti">Concerti</option>
+        <option value="sport">Sport</option>
+        <option value="teatro">Teatro</option>
+        <option value="altro">Altro</option>
+      </select>
+    </label>
+    <label>Dal giorno
+      <input type="date" name="start" [(ngModel)]="startDate" data-testid="input-start">
+    </label>
+    <label>Al giorno
+      <input type="date" name="end" [(ngModel)]="endDate" data-testid="input-end">
+    </label>
+    <button class="primary" type="submit" data-testid="button-filter">Applica filtri</button>
+    <button class="text-button" type="button" (click)="reset()" data-testid="button-reset">Azzera</button>
+  </form>
+  @if (filterError) { <p class="error" role="alert">{{ filterError }}</p> }
+
+  @if (loading) {
+    <div class="event-grid" aria-label="Caricamento eventi">
+      <div class="skeleton" aria-hidden="true"></div><div class="skeleton" aria-hidden="true"></div>
+      <div class="skeleton" aria-hidden="true"></div>
+    </div>
+  } @else if (error) {
+    <div class="state" role="alert"><h3>Non riusciamo a caricare l'agenda</h3><p>{{ error }}</p>
+      <button class="primary" type="button" (click)="loadEvents()">Riprova</button></div>
+  } @else if (!events.length) {
+    <div class="state"><h3>Nessun evento trovato</h3><p>Prova a cambiare categoria o intervallo di date.</p>
+      <button class="primary" type="button" (click)="reset()">Mostra tutti</button></div>
+  } @else {
+    <div class="event-grid">
+      @for (ev of events; track ev.id) {
+        <article class="event-card" [attr.data-testid]="'card-event-' + ev.id">
+          <div class="event-card__top"><span class="category">{{ ev.categoria }}</span>
+            <span class="date">{{ ev.data | date:'dd MMM yyyy':'':'it' }}</span></div>
+          <h3><a [routerLink]="['/events', ev.id]" [attr.data-testid]="'link-event-' + ev.id">{{ ev.titolo }}</a></h3>
+          <p>{{ ev.descrizione || 'Un appuntamento da non perdere in città.' }}</p>
+          @if (ev.latitude != null && ev.longitude != null) {
+            <span class="map-indicator">● Posizione sulla mappa</span>
+          }
+          <div class="event-card__bottom"><span>{{ ev.luogo }}</span><span>{{ ev.data | date:'HH:mm' }}</span></div>
+        </article>
+      }
+    </div>
+    @if (totalPages > 1) {
+      <nav class="pagination" aria-label="Pagine eventi">
+        <button type="button" (click)="prevPage()" [disabled]="page === 0">Precedente</button>
+        <span>Pagina {{ page + 1 }} di {{ totalPages }}</span>
+        <button type="button" (click)="nextPage()" [disabled]="page + 1 >= totalPages">Successiva</button>
+      </nav>
+    }
+  }
+</section>

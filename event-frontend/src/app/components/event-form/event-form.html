@@ -1,0 +1,71 @@
+<section class="form-page">
+  <a routerLink="/" class="back">← Torna agli eventi</a>
+  @if (auth.getToken()) {
+    <p class="eyebrow">AGENDA CITTADINA</p>
+    <h1>{{ editingId ? 'Modifica evento' : 'Pubblica un evento' }}</h1>
+    <p>Condividi con la città tutte le informazioni utili.</p>
+    <form #eventForm="ngForm" (ngSubmit)="save(eventForm)">
+      <label>Titolo <span aria-hidden="true">*</span>
+        <input name="titolo" [(ngModel)]="event.titolo" required maxlength="200" placeholder="Es. Jazz al parco" data-testid="input-title">
+      </label>
+      <label>Descrizione
+        <textarea name="descrizione" [(ngModel)]="event.descrizione" maxlength="5000" rows="4" placeholder="Racconta cosa succederà"></textarea>
+      </label>
+      <div class="form-row">
+        <label>Data e ora <span aria-hidden="true">*</span>
+          <input name="data" type="datetime-local" [(ngModel)]="event.data" [min]="minDate" required data-testid="input-datetime">
+        </label>
+        <label>Categoria <span aria-hidden="true">*</span>
+          <select name="categoria" [(ngModel)]="event.categoria" required data-testid="select-form-category">
+            <option value="" disabled>Seleziona</option>
+            <option value="concerti">Concerti</option>
+            <option value="sport">Sport</option>
+            <option value="teatro">Teatro</option>
+            <option value="altro">Altro</option>
+          </select>
+        </label>
+      </div>
+      <label>Luogo <span aria-hidden="true">*</span>
+        <input name="luogo" [(ngModel)]="event.luogo" (ngModelChange)="clearPosition()" required maxlength="255" placeholder="Es. Piazza del Duomo, Milano" data-testid="input-location">
+      </label>
+      <section class="map-picker" aria-labelledby="picker-title">
+        <h2 id="picker-title">Posizione sulla mappa</h2>
+        <p>Cerca il luogo oppure scegli direttamente il punto sulla mappa. La posizione è facoltativa.</p>
+        <div class="map-picker__actions">
+          <button class="locate" type="button" (click)="locate()" [disabled]="locating || !event.luogo.trim()" data-testid="button-locate-form">
+            {{ locating ? 'Ricerca in corso…' : 'Cerca il luogo' }}
+          </button>
+          <button class="locate" type="button" (click)="showManualMap()" data-testid="button-manual-map">
+            Scegli sulla mappa
+          </button>
+        </div>
+        @if (mapError) { <p class="error" role="alert">{{ mapError }}</p> }
+        @if (manualMode) {
+          <div class="coordinate-row">
+            <label>Latitudine
+              <input type="text" inputmode="decimal" name="manualLatitude" [(ngModel)]="manualLatitude" placeholder="45.4642" data-testid="input-latitude">
+            </label>
+            <label>Longitudine
+              <input type="text" inputmode="decimal" name="manualLongitude" [(ngModel)]="manualLongitude" placeholder="9.1900" data-testid="input-longitude">
+            </label>
+            <button class="locate" type="button" (click)="applyCoordinates()" data-testid="button-apply-coordinates">Imposta coordinate</button>
+          </div>
+        }
+        @if (manualMode || (event.latitude != null && event.longitude != null)) {
+          <p class="map-feedback" role="status">
+            {{ event.latitude != null && event.longitude != null ? (locatedPlace || 'Posizione salvata') : 'Clicca sulla mappa per posizionare il pin.' }}
+          </p>
+          <app-event-map [latitude]="event.latitude" [longitude]="event.longitude" [selectable]="true"
+                         (positionChange)="movePin($event)" />
+        }
+      </section>
+      @if (error) { <p class="error" role="alert">{{ error }}</p> }
+      <button class="primary" type="submit" [disabled]="saving" data-testid="button-save-event">
+        {{ saving ? 'Salvataggio…' : (editingId ? 'Salva modifiche' : 'Pubblica evento') }}
+      </button>
+    </form>
+  } @else {
+    <div class="state"><h1>Accedi per pubblicare</h1><p>Gli eventi possono essere creati solo dagli utenti autenticati.</p>
+      <a routerLink="/login" class="primary">Vai al login</a></div>
+  }
+</section>

@@ -1,0 +1,26 @@
+<section class="login-page">
+  <a routerLink="/" class="back">← Torna agli eventi</a>
+  <div class="login-panel">
+    <p class="eyebrow">LA TUA CITTÀ, INSIEME</p>
+    <h1>{{ registering ? 'Crea un account' : 'Bentornato' }}</h1>
+    <p>{{ registering ? 'Registrati per proporre nuovi appuntamenti.' : 'Accedi per pubblicare e gestire gli eventi.' }}</p>
+    <form #loginForm="ngForm" (ngSubmit)="submit(loginForm)">
+      <label>Username
+        <input name="username" [(ngModel)]="username" required autocomplete="username" data-testid="input-username">
+      </label>
+      <label>Password
+        <input name="password" type="password" [(ngModel)]="password" required minlength="8"
+               [attr.autocomplete]="registering ? 'new-password' : 'current-password'" data-testid="input-password">
+      </label>
+      <p class="hint">La password deve contenere almeno 8 caratteri.</p>
+      @if (error) { <p class="error" role="alert">{{ error }}</p> }
+      @if (notice) { <p class="notice" role="status">{{ notice }}</p> }
+      <button class="primary" type="submit" [disabled]="busy || loginForm.invalid" data-testid="button-auth">
+        {{ busy ? 'Attendi…' : registering ? 'Registrati' : 'Accedi' }}
+      </button>
+    </form>
+    <button class="switch" type="button" (click)="registering = !registering; error = ''; notice = ''">
+      {{ registering ? 'Hai già un account? Accedi' : 'Non hai un account? Registrati' }}
+    </button>
+  </div>
+</section>

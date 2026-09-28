@@ -1,0 +1,22 @@
+<a class="skip" href="#content">Vai al contenuto</a>
+<header class="header">
+  <nav class="nav" aria-label="Navigazione principale">
+    <a class="brand" routerLink="/" aria-label="In città, pagina iniziale">
+      <svg viewBox="0 0 32 32" width="32" height="32" fill="none" aria-hidden="true">
+        <path d="M4 26V13l7-5 7 5v13M18 26V9l5-4 5 4v17M8 26v-8h6v8M22 14h2m-2 5h2" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <span>in città</span>
+    </a>
+    <div class="nav__links">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" data-testid="link-events">Eventi</a>
+      @if (auth.getToken()) {
+        <a routerLink="/new-event" routerLinkActive="active" data-testid="link-new-event">Pubblica un evento</a>
+        <button type="button" (click)="logout()" data-testid="button-logout">Esci</button>
+      } @else {
+        <a routerLink="/login" routerLinkActive="active" data-testid="link-login">Accedi</a>
+      }
+    </div>
+  </nav>
+</header>
+<main class="page" id="content"><router-outlet /></main>
+<footer class="footer">Eventi cittadini, a portata di tutti.</footer>
