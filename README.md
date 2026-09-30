@@ -13,6 +13,27 @@ il proxy di sviluppo e Nginx in Docker inoltrano le richieste al backend.
 | Interfaccia e mappa | [`event-frontend/`](event-frontend/README.md) | Angular 20, TypeScript, Leaflet, OpenStreetMap, agenda e form eventi |
 | Avvio integrato | [`compose.yaml`](compose.yaml) | Docker Compose, PostgreSQL 16 e Nginx con proxy API |
 
+## Anteprima
+
+Screenshot reali dell'applicazione, acquisiti su un'istanza isolata con dati
+dimostrativi. Titoli, descrizioni e date non rappresentano un programma
+effettivo di eventi cittadini.
+
+### Agenda e filtri
+
+La pagina iniziale mostra gli eventi in ordine cronologico e consente di
+filtrare per categoria e intervallo di date.
+
+![Agenda degli eventi con filtri e sei appuntamenti dimostrativi](docs/screenshots/agenda.png)
+
+### Dettaglio con mappa
+
+Un evento con coordinate salvate mostra il luogo sulla mappa Leaflet.
+La cartografia visualizzata è di OpenStreetMap, con attribuzione mantenuta
+nello screenshot.
+
+![Dettaglio di un evento dimostrativo con mappa di Piazza del Duomo a Milano](docs/screenshots/dettaglio-mappa.png)
+
 ## Funzionalità
 
 - **Agenda**: eventi ordinati per data, ricerca per categoria e intervallo di date,
@@ -166,3 +187,15 @@ poi esegui `git switch main` e `git pull --ff-only origin main`.
 database locali, segreti `.env` e output JavaScript generati. Conserva
 `package-lock.json` per installazioni riproducibili; non inserire mai
 credenziali o dati personali negli esempi e nei commit.
+
+## Licenza e contenuti di terze parti
+
+Il codice del progetto è distribuito con [licenza MIT](LICENSE),
+copyright 2026 Francesco Marchitelli. Il testo della licenza definisce
+permessi, condizioni e limitazioni di responsabilità.
+
+Le dipendenze mantengono le rispettive licenze; la licenza del progetto
+non sostituisce quelle dei contenuti di terze parti.
+La cartografia e i dati OpenStreetMap, inclusi quelli visibili negli screenshot,
+restano soggetti alle relative condizioni e attribuzioni:
+[OpenStreetMap copyright e licenza](https://www.openstreetmap.org/copyright).
