@@ -49,20 +49,60 @@ nello screenshot.
   database: una mappa se hanno coordinate; altrimenti propone una ricerca del
   luogo a partire dal testo salvato, senza modificare il record.
 
-## Avvio in locale
+## Scegliere il database e il percorso di avvio
 
-Servono JDK 21, Maven 3.9+ e Node.js 20.19+ della serie 20 oppure 22.12+
-della serie 22, con npm. Prima dell'avvio imposta nel terminale un
-`JWT_SECRET` privato casuale di almeno 64 byte UTF-8: ora è obbligatorio
-anche con H2. `.env` viene letto da Compose, non automaticamente da Maven.
+Il progetto supporta **H2 e PostgreSQL**: scegli uno dei due percorsi qui
+sotto, senza modificare il codice. H2 è il percorso rapido per iniziare
+in locale; PostgreSQL con Docker Compose è consigliato per provare lo
+stack completo e un database in un servizio separato.
+
+| Percorso | Quando sceglierlo | Database e persistenza | Avvio |
+| --- | --- | --- | --- |
+| H2 locale | Sviluppo ed esercitazioni senza installare un server database | File `demo/data/events.mv.db`, conservato ai riavvii | Backend Maven e frontend Angular in due terminali |
+| PostgreSQL con Docker | Demo dello stack completo, anche per chi clona il progetto | PostgreSQL 16 nel servizio `db`, con volume `postgres_data` | Docker Compose avvia database, backend e frontend |
+
+Flyway gestisce lo schema in entrambe le modalità. H2 e PostgreSQL sono
+**archivi distinti**: passare da un percorso all'altro non trasferisce
+automaticamente eventi o account. Il volume rende persistente PostgreSQL,
+ma non sostituisce un backup; nessuna delle due modalità rende la demo
+pronta per l'esposizione pubblica.
+
+**Se hai già dati, prima dell'avvio fai un backup e verifica lo schema**:
+un database popolato senza cronologia Flyway non viene adottato automaticamente.
 La [guida migrazioni e sicurezza](docs/MIGRAZIONI-E-SICUREZZA.md) spiega
 variabili, amministratori e adozione dei database esistenti.
-Poi, dalla radice del repository, apri due terminali:
+
+## H2: avvio locale rapido
+
+Servono JDK 21, Maven 3.9+ e Node.js 20.19+ della serie 20 oppure 22.12+
+della serie 22, con npm. Non servono Docker o un server PostgreSQL:
+la configurazione predefinita usa H2 su file.
+
+Nel terminale del backend imposta `JWT_SECRET` con una chiave privata casuale
+di almeno 64 byte UTF-8. È obbligatoria anche con H2; `.env` non viene
+caricato automaticamente da Maven. Ad esempio, in PowerShell, per la prima
+configurazione:
+
+```powershell
+$bytes = New-Object byte[] 64
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($bytes)
+$rng.Dispose()
+$env:JWT_SECRET = [Convert]::ToBase64String($bytes)
+```
+
+Conserva la chiave in un sistema appropriato per i segreti e reimpostala
+negli avvii successivi dello stesso ambiente. Non generarne una nuova a
+ogni riavvio: cambiarla invalida i token già emessi.
+
+Dalla radice del repository, nello stesso terminale:
 
 ```bash
 cd demo
 mvn spring-boot:run
 ```
+
+Apri un secondo terminale nella radice del repository per il frontend:
 
 ```bash
 cd event-frontend
@@ -76,11 +116,24 @@ in `demo/data/`: gli eventi e gli account restano disponibili ai riavvii,
 ma il file del database non va pubblicato su Git. Dal frontend puoi registrare
 un account e accedere per creare eventi. Il token vive solo nella memoria
 della scheda e va richiesto di nuovo dopo un refresh.
-Se `demo/data/events.mv.db` esiste già senza cronologia Flyway, non verrà
-adottato automaticamente: segui la procedura di backup e verifica nella guida
-prima di avviare questa versione.
 
-## Avvio integrato con Docker
+Per questo percorso lascia non impostati `SPRING_PROFILES_ACTIVE` e gli
+override `SPRING_DATASOURCE_*` eventualmente usati per PostgreSQL.
+**Non attivare il profilo `h2` per conservare i dati**: quel profilo usa un
+database temporaneo in memoria, diverso dall'H2 su file predefinito.
+Per fermare l'applicazione usa `Ctrl+C` nei due terminali; non eliminare
+`demo/data/` se vuoi conservare eventi e account.
+
+## PostgreSQL: stack completo con Docker
+
+Questo percorso avvia PostgreSQL 16, il backend Spring Boot e il frontend
+Angular servito da Nginx. Compose seleziona già il profilo `postgres` e
+collega il backend al servizio `db`: **non occorre installare PostgreSQL
+sul PC né modificare `application.yml`**.
+
+Servono Docker con il plugin Compose, JDK 21 e Maven 3.9+.
+Node.js e npm per il frontend vengono usati all'interno della build Docker,
+quindi non sono richiesti sul PC per questo percorso.
 
 **Prima di avviare Compose, compila il backend**: il suo Dockerfile copia
 un JAR già esistente e non esegue Maven durante la build dell'immagine.
@@ -94,8 +147,11 @@ cd ..
 ```
 
 Il comando esegue i test e produce `demo/target/demo-0.0.1-SNAPSHOT.jar`.
-Copia [`.env.example`](.env.example) in `.env`, se non hai già un file
-configurato, e compila entrambi i valori vuoti: `JWT_SECRET` con un valore
+Copia [`.env.example`](.env.example) in `.env` nella radice del repository,
+se non hai già un file configurato. In PowerShell puoi usare
+`Copy-Item .env.example .env` soltanto per la prima configurazione, senza
+sovrascrivere un `.env` esistente. Compila entrambi i valori vuoti:
+`JWT_SECRET` con un valore
 privato casuale di almeno 64 byte e `DB_PASSWORD` con una password privata.
 Il backend rifiuta segreti mancanti, troppo corti o segnaposto noti;
 Compose rifiuta credenziali vuote. Non aggiungere `.env` al repository.
@@ -131,6 +187,27 @@ la password di un database già inizializzato.
 Le porte host 4200 e 8080 devono essere libere. H2 locale e PostgreSQL Docker
 sono database distinti: gli eventi e gli account non vengono trasferiti
 automaticamente fra le due modalità.
+
+Per verificare i servizi usa `docker compose ps`; per leggere i messaggi del
+backend usa `docker compose logs backend`. Per fermare lo stack conservando
+il volume usa `docker compose down`. Al successivo `docker compose up`,
+eventi e account restano nel database PostgreSQL.
+
+### PostgreSQL già installato, senza Docker
+
+Se preferisci un server PostgreSQL esistente, crea un database e un utente
+dedicati, poi configura nel terminale del backend `JWT_SECRET`,
+`SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` e
+`SPRING_DATASOURCE_PASSWORD`. Dalla cartella `demo` avvia:
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=postgres
+```
+
+In questo caso il server PostgreSQL e la persistenza sono gestiti da te;
+avvia il frontend nel secondo terminale come nel percorso H2.
+Per i dettagli e per database già popolati consulta la
+[guida migrazioni e sicurezza](docs/MIGRAZIONI-E-SICUREZZA.md).
 
 ## Verifica
 
