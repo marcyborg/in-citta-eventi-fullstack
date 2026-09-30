@@ -26,5 +26,20 @@ describe('AuthService', () => {
     expect(auth.getToken()).toBe('token');
     auth.logout();
     expect(auth.getToken()).toBeNull();
+    expect(auth.profile()).toBeNull();
+  });
+
+  it('abilita il proprietario ma non un altro utente o un evento storico', () => {
+    auth.signIn('token', 'mario', { id: 3, username: 'mario', role: 'USER' });
+    expect(auth.canManageEvent({ ownerId: 3 })).toBeTrue();
+    expect(auth.canManageEvent({ ownerId: 4 })).toBeFalse();
+    expect(auth.canManageEvent({ ownerId: null })).toBeFalse();
+  });
+
+  it('abilita un amministratore anche per eventi senza proprietario', () => {
+    auth.signIn('token', 'admin', { id: 5, username: 'admin', role: 'ADMIN' });
+    expect(auth.canManageEvent({ ownerId: null })).toBeTrue();
+    auth.logout();
+    expect(auth.canManageEvent({ ownerId: 5 })).toBeFalse();
   });
 });

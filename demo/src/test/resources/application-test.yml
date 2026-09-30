@@ -1,0 +1,3 @@
+jwt:
+  # Public fixture ONLY on the test classpath; never included in the application JAR.
+  secret: CI-ONLY-public-fixture-for-tests-abcdefghijklmnopqrstuvwxyz-0123456789-abcdef

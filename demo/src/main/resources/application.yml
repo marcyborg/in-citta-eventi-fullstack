@@ -5,12 +5,17 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    baseline-on-migrate: false
+    clean-disabled: true
 
 jwt:
-  # Demo-only fallback; set JWT_SECRET to a private random string (64+ bytes) in production.
-  secret: ${JWT_SECRET:replace-this-demo-secret-before-production-with-a-long-random-64-byte-value}
+  secret: ${JWT_SECRET:}
   expiration: 86400000
 
 app:
@@ -25,7 +30,7 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/eventdb}
     username: ${SPRING_DATASOURCE_USERNAME:eventuser}
-    password: ${SPRING_DATASOURCE_PASSWORD:eventpass}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
 ---
 spring:

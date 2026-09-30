@@ -1,6 +1,10 @@
 <section class="form-page">
   <a routerLink="/" class="back">← Torna agli eventi</a>
-  @if (auth.getToken()) {
+  @if (editingDenied) {
+    <h1>Modifica non consentita</h1>
+    <p class="error" role="alert">Solo il proprietario o un amministratore può modificare questo evento.</p>
+    <a routerLink="/" class="primary">Torna all'agenda</a>
+  } @else if (auth.getToken()) {
     <p class="eyebrow">AGENDA CITTADINA</p>
     <h1>{{ editingId ? 'Modifica evento' : 'Pubblica un evento' }}</h1>
     <p>Condividi con la città tutte le informazioni utili.</p>

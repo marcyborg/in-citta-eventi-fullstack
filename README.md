@@ -9,7 +9,7 @@ il proxy di sviluppo e Nginx in Docker inoltrano le richieste al backend.
 
 | Componente | Cartella | Tecnologie e responsabilità |
 | --- | --- | --- |
-| API e logica eventi | [`demo/`](demo/README.md) | Java 21, Spring Boot 3.5.6, JPA, JWT, Swagger, H2/PostgreSQL |
+| API e logica eventi | [`demo/`](demo/README.md) | Java 21, Spring Boot 3.5.6, JPA, JWT, Flyway, Swagger, H2/PostgreSQL |
 | Interfaccia e mappa | [`event-frontend/`](event-frontend/README.md) | Angular 20, TypeScript, Leaflet, OpenStreetMap, agenda e form eventi |
 | Avvio integrato | [`compose.yaml`](compose.yaml) | Docker Compose, PostgreSQL 16 e Nginx con proxy API |
 
@@ -40,8 +40,10 @@ nello screenshot.
   dettaglio, paginazione e operazioni CRUD.
 - **Integrità dei dati**: validazioni (fra cui titolo obbligatorio e data futura) e errori API
   strutturati.
-- **Autenticazione**: registrazione e accesso con JWT; la creazione, modifica e cancellazione
-  degli eventi richiede autenticazione.
+- **Autenticazione e permessi**: registrazione e accesso con JWT; ogni nuovo
+  evento appartiene al suo autore. Solo il proprietario o un amministratore
+  possono modificarlo o eliminarlo; gli eventi storici senza autore sono
+  gestibili esclusivamente dagli amministratori.
 - **Localizzazione**: posizione facoltativa con coordinate, selezione su mappa e geocodifica su
   richiesta. Il dettaglio mostra anche i luoghi degli eventi già presenti nel
   database: una mappa se hanno coordinate; altrimenti propone una ricerca del
@@ -50,7 +52,12 @@ nello screenshot.
 ## Avvio in locale
 
 Servono JDK 21, Maven 3.9+ e Node.js 20.19+ della serie 20 oppure 22.12+
-della serie 22, con npm. Dalla radice del repository apri due terminali:
+della serie 22, con npm. Prima dell'avvio imposta nel terminale un
+`JWT_SECRET` privato casuale di almeno 64 byte UTF-8: ora è obbligatorio
+anche con H2. `.env` viene letto da Compose, non automaticamente da Maven.
+La [guida migrazioni e sicurezza](docs/MIGRAZIONI-E-SICUREZZA.md) spiega
+variabili, amministratori e adozione dei database esistenti.
+Poi, dalla radice del repository, apri due terminali:
 
 ```bash
 cd demo
@@ -69,6 +76,9 @@ in `demo/data/`: gli eventi e gli account restano disponibili ai riavvii,
 ma il file del database non va pubblicato su Git. Dal frontend puoi registrare
 un account e accedere per creare eventi. Il token vive solo nella memoria
 della scheda e va richiesto di nuovo dopo un refresh.
+Se `demo/data/events.mv.db` esiste già senza cronologia Flyway, non verrà
+adottato automaticamente: segui la procedura di backup e verifica nella guida
+prima di avviare questa versione.
 
 ## Avvio integrato con Docker
 
@@ -85,9 +95,10 @@ cd ..
 
 Il comando esegue i test e produce `demo/target/demo-0.0.1-SNAPSHOT.jar`.
 Copia [`.env.example`](.env.example) in `.env`, se non hai già un file
-configurato, e sostituisci entrambi i segnaposto: `JWT_SECRET` con un valore
+configurato, e compila entrambi i valori vuoti: `JWT_SECRET` con un valore
 privato casuale di almeno 64 byte e `DB_PASSWORD` con una password privata.
-Non basta mantenere i segnaposto e non aggiungere `.env` al repository.
+Il backend rifiuta segreti mancanti, troppo corti o segnaposto noti;
+Compose rifiuta credenziali vuote. Non aggiungere `.env` al repository.
 
 Per generare localmente un segreto in PowerShell, senza inserirne uno fisso
 nella documentazione:
@@ -113,8 +124,9 @@ Frontend: `http://localhost:4200/`; backend:
 `http://localhost:8080/swagger-ui/index.html`. PostgreSQL usa un volume
 persistente; `docker compose down` lo conserva. **Non usare `docker compose
 down -v` se vuoi conservare i dati**: elimina quel volume e i dati contenuti.
-Il valore JWT predefinito in `application.yml` è solo per lo sviluppo locale:
-non usarlo in ambienti pubblici.
+Non ci sono segreti JWT o password PostgreSQL di fallback. Le credenziali
+configurano solo un nuovo volume: cambiare `.env` non ruota automaticamente
+la password di un database già inizializzato.
 
 Le porte host 4200 e 8080 devono essere libere. H2 locale e PostgreSQL Docker
 sono database distinti: gli eventi e gli account non vengono trasferiti
@@ -135,9 +147,12 @@ trovato. I dettagli delle API e delle variabili sono nel
 
 La [CI GitHub Actions](.github/workflows/ci.yml) esegue i test backend,
 la build Angular e i test frontend per push e pull request.
-Non comprende l'avvio completo Docker o una suite d'integrazione PostgreSQL:
-la presenza della configurazione Compose non equivale a una verifica
-automatica dell'intero stack.
+Un job PostgreSQL 16 verifica permessi, migrazioni, conservazione dei dati,
+riavvii applicativi e riavvio del container database, oltre ai vincoli Compose.
+Non esegue la build e l'avvio completo dei tre servizi Compose.
+I test ordinari usano H2 e una chiave pubblica esclusivamente sul classpath
+di test; per PostgreSQL usa il database dedicato `in_citta_test`,
+come descritto nella [guida](docs/MIGRAZIONI-E-SICUREZZA.md).
 
 ## Mappa e dati preesistenti
 
@@ -152,15 +167,12 @@ Le coordinate geocodificate vanno sempre verificate prima del salvataggio.
 
 ## Limiti della demo
 
-- **Autorizzazioni**: il login protegge le scritture, ma non sono implementati
-  ruoli amministrativi o controlli di proprietà degli eventi. Un utente
-  autenticato può modificare ed eliminare anche eventi creati da altri.
-- **Schema database**: Hibernate usa `ddl-auto: update`; non ci sono migrazioni
-  versionate Flyway. Per evoluzioni controllate servono migrazioni e backup
-  verificati, non soltanto un volume persistente.
-- **Credenziali**: JWT e password predefiniti sono esclusivamente dimostrativi.
-  Compose contiene un fallback della password PostgreSQL: imposta comunque
-  `DB_PASSWORD` in `.env`, senza affidarti al valore predefinito.
+- **Gestione operativa**: l'autorizzazione proprietario/amministratore è
+  implementata, ma non esiste un pannello di amministrazione degli account.
+  L'amministratore iniziale viene creato solo con una procedura offline esplicita.
+- **Dati e credenziali**: Flyway gestisce le migrazioni e Hibernate valida
+  lo schema, ma restano necessari backup verificati, rotazione dei segreti e
+  una procedura controllata per gli archivi preesistenti.
 - **Servizi esterni**: mappe e geocodifica richiedono connettività e dipendono
   dalla disponibilità e dai limiti dei servizi OpenStreetMap/Nominatim.
 - **Sessione e date**: il JWT resta in memoria e viene perso al refresh;
@@ -168,7 +180,7 @@ Le coordinate geocodificate vanno sempre verificate prima del salvataggio.
 
 Il progetto è adatto a esercitazioni e dimostrazioni tecniche. Non è un sistema
 pronto per l'esposizione pubblica: prima servono gestione operativa,
-controllo degli accessi e una verifica di sicurezza dedicata.
+HTTPS, revisione della configurazione di deployment e una verifica di sicurezza dedicata.
 
 ## Clonare e aggiornare il progetto
 

@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
+import { AuthService, UserProfile } from '../../services/auth.service';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -26,18 +26,20 @@ export class LoginComponent {
     if (form.invalid) { form.control.markAllAsTouched(); return; }
     this.busy = true;
     this.error = '';
-    const request: Observable<{ token?: string; message?: string }> = this.registering
+    const request: Observable<{ token?: string; message?: string; user?: UserProfile }> = this.registering
       ? this.auth.register(this.username.trim(), this.password)
       : this.auth.login(this.username.trim(), this.password);
     request.subscribe({
       next: result => {
         this.busy = false;
-        if (typeof result.token === 'string') {
-          this.auth.signIn(result.token, this.username.trim());
+        if (typeof result.token === 'string' && result.user) {
+          this.auth.signIn(result.token, result.user.username, result.user);
           this.router.navigate(['/']);
-        } else {
+        } else if (this.registering) {
           this.notice = 'Registrazione completata. Ora puoi accedere.';
           this.registering = false;
+        } else {
+          this.error = 'Risposta di accesso non valida. Riprova.';
         }
         this.cdr.markForCheck();
       },

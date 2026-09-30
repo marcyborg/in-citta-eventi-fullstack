@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: eventdb
       POSTGRES_USER: eventuser
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-local-demo-only}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Imposta una password privata DB_PASSWORD nel file .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -24,7 +24,7 @@ services:
       SPRING_PROFILES_ACTIVE: postgres
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/eventdb
       SPRING_DATASOURCE_USERNAME: eventuser
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-local-demo-only}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?Imposta una password privata DB_PASSWORD nel file .env}
       JWT_SECRET: ${JWT_SECRET:?Imposta JWT_SECRET con un valore privato di almeno 64 byte}
 
   frontend:

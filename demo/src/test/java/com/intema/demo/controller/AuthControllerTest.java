@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@ActiveProfiles("h2")
+@ActiveProfiles({"h2", "test"})
 @AutoConfigureMockMvc
 class AuthControllerTest {
 
@@ -26,12 +26,14 @@ class AuthControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired private com.intema.demo.repository.EventRepository events;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
+        events.deleteAll();
         userRepository.deleteAll();
         User user = new User();
         user.setUsername("sample");
