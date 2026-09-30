@@ -1,6 +1,6 @@
-# In Città | Frontend Angular (`event-frontend/`)
+# In Città | Agenda e mappa eventi con Angular
 
-Questa interfaccia utilizza le API del
+Componente frontend in `event-frontend/`: questa interfaccia utilizza le API del
 [backend Spring Boot collegato](../demo/README.md). La composizione dei due
 servizi e le opzioni di avvio sono nel [README principale](../README.md).
 
@@ -12,7 +12,8 @@ dettaglio offre una ricerca del luogo salvato senza alterare l'evento.
 
 ## Avvio locale
 
-Richiede Node.js 20.19+ o 22 e il backend sulla porta 8080.
+Richiede Node.js 20.19+ della serie 20 oppure 22.12+ della serie 22,
+con npm e il backend sulla porta 8080.
 
 ```bash
 npm ci
@@ -31,3 +32,15 @@ I test richiedono Chrome/Chromium, impostabile con `CHROME_BIN`. Il token JWT
 è conservato solo in memoria: aggiornando la pagina occorre accedere di nuovo.
 In Docker, Nginx inoltra `/api` al servizio `backend`. `node_modules/`,
 `dist/` e gli output JavaScript generati sono esclusi da Git.
+
+## Mappa e limiti
+
+Le mappe caricano riquadri OpenStreetMap; la ricerca del luogo passa dal
+backend a Nominatim solo dopo un'azione esplicita. La selezione manuale
+delle coordinate resta disponibile anche senza geocodifica, ma il caricamento
+della mappa dipende dalla connettività.
+
+Una posizione trovata nel dettaglio di un evento senza coordinate non viene
+salvata automaticamente. L'autenticazione abilita le operazioni di scrittura,
+ma il progetto non distingue proprietari o ruoli: le precauzioni e i limiti
+complessivi sono nel [README principale](../README.md).

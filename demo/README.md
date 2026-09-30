@@ -1,7 +1,8 @@
-# In Città | Backend Spring Boot (`demo/`)
+# In Città | API eventi e autenticazione con Spring Boot
 
-Questa cartella espone le API usate dal
-[frontend Angular collegato](../event-frontend/README.md). Il progetto completo,
+Componente backend in `demo/`: espone le API per eventi, autenticazione e
+geocodifica usate dal [frontend Angular collegato](../event-frontend/README.md).
+Il progetto completo,
 con istruzioni di avvio integrato, è descritto nel
 [README principale](../README.md).
 
@@ -43,3 +44,18 @@ predefinito è esclusivamente per lo sviluppo locale. Per PostgreSQL, attiva
 `SPRING_DATASOURCE_*`. Per cambiare il servizio di geocodifica Nominatim
 compatibile, usa `GEOCODING_BASE_URL`. L'endpoint può restituire 404, 429 o
 502; il frontend offre comunque la selezione manuale delle coordinate.
+
+## Persistenza, autorizzazioni e Docker
+
+H2 locale e PostgreSQL sono archivi separati: cambiare profilo non importa
+eventi o account. Lo schema è gestito da Hibernate con `ddl-auto: update`,
+non da migrazioni versionate.
+
+Gli endpoint di scrittura richiedono autenticazione, ma non controllano
+la proprietà dell'evento o ruoli distinti. Non presentare questa protezione
+come un sistema completo di autorizzazione.
+
+Il Dockerfile copia il JAR da `target/`: esegui prima `mvn clean package`
+in questa cartella, poi avvia Compose dalla radice del repository.
+Le precauzioni sui segreti e i limiti della demo sono nel
+[README principale](../README.md).

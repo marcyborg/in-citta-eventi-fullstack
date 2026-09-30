@@ -1,34 +1,35 @@
-# In Città | Eventi cittadini fullstack
+# In Città | Eventi cittadini con Spring Boot, Angular e mappa OpenStreetMap
 
-Un'unica applicazione per consultare e gestire eventi cittadini, composta dal
-[backend Java Spring Boot](demo/README.md) in `demo/` e dal
-[frontend Angular](event-frontend/README.md) in `event-frontend/`. Le due cartelle
-sono parti dello stesso progetto: Angular chiama le API Spring Boot sotto `/api`;
+Applicazione fullstack dimostrativa per consultare e gestire eventi cittadini,
+filtrare l'agenda e visualizzare il luogo su una mappa interattiva.
+Il [backend Java Spring Boot](demo/README.md) in `demo/` e il
+[frontend Angular](event-frontend/README.md) in `event-frontend/` sono parti
+dello stesso progetto: Angular chiama le API Spring Boot sotto `/api`;
 il proxy di sviluppo e Nginx in Docker inoltrano le richieste al backend.
 
-| Componente | Cartella | Responsabilità |
+| Componente | Cartella | Tecnologie e responsabilità |
 | --- | --- | --- |
-| Backend Spring Boot | [`demo/`](demo/README.md) | CRUD e ricerca eventi, autenticazione JWT, geocodifica, Swagger, H2/PostgreSQL |
-| Frontend Angular | [`event-frontend/`](event-frontend/README.md) | Agenda, filtri, dettaglio, login, form eventi e mappa Leaflet/OpenStreetMap |
-| Avvio integrato | [`compose.yaml`](compose.yaml) | Angular + Spring Boot + PostgreSQL |
+| API e logica eventi | [`demo/`](demo/README.md) | Java 21, Spring Boot 3.5.6, JPA, JWT, Swagger, H2/PostgreSQL |
+| Interfaccia e mappa | [`event-frontend/`](event-frontend/README.md) | Angular 20, TypeScript, Leaflet, OpenStreetMap, agenda e form eventi |
+| Avvio integrato | [`compose.yaml`](compose.yaml) | Docker Compose, PostgreSQL 16 e Nginx con proxy API |
 
 ## Funzionalità
 
-- Eventi ordinati per data, ricerca per categoria e intervallo di date,
+- **Agenda**: eventi ordinati per data, ricerca per categoria e intervallo di date,
   dettaglio, paginazione e operazioni CRUD.
-- Validazioni (fra cui titolo obbligatorio e data futura) e errori API
+- **Integrità dei dati**: validazioni (fra cui titolo obbligatorio e data futura) e errori API
   strutturati.
-- Registrazione e accesso con JWT: la creazione, modifica e cancellazione
+- **Autenticazione**: registrazione e accesso con JWT; la creazione, modifica e cancellazione
   degli eventi richiede autenticazione.
-- Posizione facoltativa con coordinate, selezione su mappa e geocodifica su
+- **Localizzazione**: posizione facoltativa con coordinate, selezione su mappa e geocodifica su
   richiesta. Il dettaglio mostra anche i luoghi degli eventi già presenti nel
   database: una mappa se hanno coordinate; altrimenti propone una ricerca del
   luogo a partire dal testo salvato, senza modificare il record.
 
 ## Avvio in locale
 
-Servono JDK 21, Maven 3.9+ e Node.js 20.19+ o 22. Dalla radice del repository
-apri due terminali:
+Servono JDK 21, Maven 3.9+ e Node.js 20.19+ della serie 20 oppure 22.12+
+della serie 22, con npm. Dalla radice del repository apri due terminali:
 
 ```bash
 cd demo
@@ -50,17 +51,37 @@ della scheda e va richiesto di nuovo dopo un refresh.
 
 ## Avvio integrato con Docker
 
-La build dell'immagine backend usa un JAR già compilato. Dalla radice:
+**Prima di avviare Compose, compila il backend**: il suo Dockerfile copia
+un JAR già esistente e non esegue Maven durante la build dell'immagine.
+Servono quindi JDK 21 e Maven anche per questo percorso di avvio.
+Dalla radice:
 
 ```bash
 cd demo
-mvn test package
+mvn clean package
 cd ..
 ```
 
-Crea un file `.env` locale prendendo come guida [`.env.example`](.env.example)
-e imposta un `JWT_SECRET` privato, casuale, di almeno 64 byte. Imposta anche
-`DB_PASSWORD` per PostgreSQL. Non aggiungere `.env` al repository.
+Il comando esegue i test e produce `demo/target/demo-0.0.1-SNAPSHOT.jar`.
+Copia [`.env.example`](.env.example) in `.env`, se non hai già un file
+configurato, e sostituisci entrambi i segnaposto: `JWT_SECRET` con un valore
+privato casuale di almeno 64 byte e `DB_PASSWORD` con una password privata.
+Non basta mantenere i segnaposto e non aggiungere `.env` al repository.
+
+Per generare localmente un segreto in PowerShell, senza inserirne uno fisso
+nella documentazione:
+
+```powershell
+$bytes = New-Object byte[] 64
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($bytes)
+$rng.Dispose()
+[Convert]::ToBase64String($bytes)
+```
+
+Usa il risultato come valore di `JWT_SECRET` nel tuo `.env` e non condividerlo.
+Prima dell'avvio verifica la configurazione con `docker compose config --quiet`,
+che non stampa i valori dei segreti.
 
 ```bash
 docker compose up --build
@@ -69,9 +90,14 @@ docker compose up --build
 Frontend: `http://localhost:4200/`; backend:
 `http://localhost:8080/`; Swagger:
 `http://localhost:8080/swagger-ui/index.html`. PostgreSQL usa un volume
-persistente. `docker compose down -v` elimina quel volume e i dati contenuti.
+persistente; `docker compose down` lo conserva. **Non usare `docker compose
+down -v` se vuoi conservare i dati**: elimina quel volume e i dati contenuti.
 Il valore JWT predefinito in `application.yml` è solo per lo sviluppo locale:
 non usarlo in ambienti pubblici.
+
+Le porte host 4200 e 8080 devono essere libere. H2 locale e PostgreSQL Docker
+sono database distinti: gli eventi e gli account non vengono trasferiti
+automaticamente fra le due modalità.
 
 ## Verifica
 
@@ -86,6 +112,12 @@ trovato. I dettagli delle API e delle variabili sono nel
 [README backend](demo/README.md), quelli dell'interfaccia nel
 [README frontend](event-frontend/README.md).
 
+La [CI GitHub Actions](.github/workflows/ci.yml) esegue i test backend,
+la build Angular e i test frontend per push e pull request.
+Non comprende l'avvio completo Docker o una suite d'integrazione PostgreSQL:
+la presenza della configurazione Compose non equivale a una verifica
+automatica dell'intero stack.
+
 ## Mappa e dati preesistenti
 
 La ricerca del luogo usa Nominatim dopo un'azione esplicita dell'utente,
@@ -97,16 +129,38 @@ usa un servizio compatibile gestito con limiti e cache condivisi
 e la [policy dei riquadri OpenStreetMap](https://operations.osmfoundation.org/policies/tiles/).
 Le coordinate geocodificate vanno sempre verificate prima del salvataggio.
 
-## Repository e installazione sul PC
+## Limiti della demo
+
+- **Autorizzazioni**: il login protegge le scritture, ma non sono implementati
+  ruoli amministrativi o controlli di proprietà degli eventi. Un utente
+  autenticato può modificare ed eliminare anche eventi creati da altri.
+- **Schema database**: Hibernate usa `ddl-auto: update`; non ci sono migrazioni
+  versionate Flyway. Per evoluzioni controllate servono migrazioni e backup
+  verificati, non soltanto un volume persistente.
+- **Credenziali**: JWT e password predefiniti sono esclusivamente dimostrativi.
+  Compose contiene un fallback della password PostgreSQL: imposta comunque
+  `DB_PASSWORD` in `.env`, senza affidarti al valore predefinito.
+- **Servizi esterni**: mappe e geocodifica richiedono connettività e dipendono
+  dalla disponibilità e dai limiti dei servizi OpenStreetMap/Nominatim.
+- **Sessione e date**: il JWT resta in memoria e viene perso al refresh;
+  le date sono locali, senza offset o gestione esplicita dei fusi orari.
+
+Il progetto è adatto a esercitazioni e dimostrazioni tecniche. Non è un sistema
+pronto per l'esposizione pubblica: prima servono gestione operativa,
+controllo degli accessi e una verifica di sicurezza dedicata.
+
+## Clonare e aggiornare il progetto
 
 La radice del repository contiene sia `demo/` sia `event-frontend/`.
-Su Windows, apri un terminale in
-`C:\Users\Francesco\Documents\GitHub` ed esegui:
+Clona il progetto in una cartella locale:
 
-```powershell
+```bash
 git clone https://github.com/marcyborg/in-citta-eventi-fullstack.git
 cd in-citta-eventi-fullstack
 ```
+
+Per aggiornare un clone esistente, conserva prima eventuali modifiche locali,
+poi esegui `git switch main` e `git pull --ff-only origin main`.
 
 `.gitignore` esclude `target/`, `dist/`, `node_modules/`, cache Angular,
 database locali, segreti `.env` e output JavaScript generati. Conserva
