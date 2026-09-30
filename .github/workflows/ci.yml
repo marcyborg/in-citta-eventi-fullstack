@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   backend:
     name: Test backend Java
@@ -19,7 +22,66 @@ jobs:
           java-version: '21'
           cache: maven
           cache-dependency-path: demo/pom.xml
-      - run: mvn --batch-mode test
+      - run: mvn --batch-mode verify
+
+  postgres:
+    name: PostgreSQL, permessi e migrazioni
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: in_citta_test
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: ci-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U testuser -d in_citta_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: demo
+    env:
+      POSTGRES_IT_URL: jdbc:postgresql://localhost:5432/in_citta_test
+      POSTGRES_IT_USER: testuser
+      POSTGRES_IT_PASSWORD: ci-test-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: demo/pom.xml
+      - run: mvn --batch-mode -Ppostgres-it verify
+      - name: Compose richiede entrambe le credenziali
+        run: |
+          if env -u DB_PASSWORD JWT_SECRET=ci-fixture docker compose -f ../compose.yaml config --quiet; then
+            echo "Compose non deve accettare DB_PASSWORD mancante"
+            exit 1
+          fi
+          if env -u JWT_SECRET DB_PASSWORD=ci-fixture docker compose -f ../compose.yaml config --quiet; then
+            echo "Compose non deve accettare JWT_SECRET mancante"
+            exit 1
+          fi
+          DB_PASSWORD=ci-compose-only JWT_SECRET=ci-fixture docker compose -f ../compose.yaml config --quiet
+      - name: Verifica persistenza dopo riavvio PostgreSQL
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker exec "$PG_CONTAINER" psql -U testuser -d in_citta_test -v ON_ERROR_STOP=1 \
+            -c "INSERT INTO event(titolo,data,luogo,categoria) VALUES ('DB restart regression',TIMESTAMP '2099-01-01 10:00:00','Milano','sport')"
+          docker restart "$PG_CONTAINER"
+          for attempt in $(seq 1 30); do
+            if docker exec "$PG_CONTAINER" pg_isready -U testuser -d in_citta_test; then break; fi
+            sleep 1
+          done
+          count="$(docker exec "$PG_CONTAINER" psql -U testuser -d in_citta_test -At \
+            -c "SELECT count(*) FROM event WHERE titolo='DB restart regression'")"
+          test "$count" = "1"
 
   frontend:
     name: Test e build frontend Angular

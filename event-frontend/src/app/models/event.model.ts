@@ -1,4 +1,5 @@
 export interface Event {
+  readonly ownerId?: number | null;
   id?: number;
   titolo: string;
   descrizione: string;

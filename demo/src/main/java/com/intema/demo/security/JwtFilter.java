@@ -29,15 +29,16 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            if (jwtUtil.validateToken(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
-                String username = jwtUtil.getUsername(token);
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
                 try {
+                    String username = jwtUtil.getUsername(token);
                     var userDetails = userDetailsService.loadUserByUsername(username);
                     UsernamePasswordAuthenticationToken auth =
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(auth);
-                } catch (org.springframework.security.core.userdetails.UsernameNotFoundException ignored) {
-                    // An account removed after token issuance is not authenticated.
+                } catch (io.jsonwebtoken.JwtException | IllegalArgumentException
+                         | org.springframework.security.core.userdetails.UsernameNotFoundException ignored) {
+                    // Invalid/expired tokens and deleted accounts remain unauthenticated.
                 }
             }
         }

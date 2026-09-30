@@ -21,6 +21,9 @@ event-frontend/**/*.cjs
 **/data/
 *.mv.db
 *.trace.db
+**/backups/
+*.dump
+*.backup
 *.sqlite
 *.sqlite3
 *.log

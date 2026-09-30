@@ -26,7 +26,7 @@
       }
       @if (mapError) { <p class="error" role="alert">{{ mapError }}</p> }
     </section>
-    @if (auth.getToken()) {
+    @if (auth.canManageEvent(event)) {
       <div class="actions">
         <a class="primary" [routerLink]="['/new-event']" [queryParams]="{edit:event.id}">Modifica evento</a>
         <button type="button" class="danger" (click)="deleteEvent()" [disabled]="deleting">Elimina evento</button>

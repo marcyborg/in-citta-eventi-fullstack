@@ -19,7 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@ActiveProfiles("h2")
+@ActiveProfiles({"h2", "test"})
 @AutoConfigureMockMvc
 class EventControllerTest {
 
@@ -28,19 +28,19 @@ class EventControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired private com.intema.demo.repository.EventRepository events;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setup() {
+        events.deleteAll();
         userRepository.deleteAll();
         User user = new User();
         user.setUsername("tester");
         user.setPassword(passwordEncoder.encode("password")); // Sempre encoder!
         userRepository.save(user);
-        User loaded = userRepository.findByUsername("tester").orElseThrow();
-        System.out.println("Test user loaded with encoded password: " + loaded.getPassword());
 
     }
 
@@ -49,9 +49,6 @@ class EventControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"username\": \"" + "tester" + "\", \"password\": \"" + "password" + "\"}"))
                 .andReturn().getResponse();
-
-        System.out.println("LOGIN STATUS: " + response.getStatus());
-        System.out.println("LOGIN BODY: " + response.getContentAsString());
 
         if (response.getStatus() != 200) {
             throw new RuntimeException("Login fallito: " + response.getContentAsString());

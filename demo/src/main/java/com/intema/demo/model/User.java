@@ -2,6 +2,9 @@ package com.intema.demo.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "users")
@@ -11,8 +14,16 @@ public class User {
     private Long id;
 
     @NotBlank
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String username;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 16)
+    private UserRole role = UserRole.USER;
+
+    public UserRole getRole() { return role; }
+    public void setRole(UserRole role) { this.role = role; }
 
     public Long getId() {
         return id;
@@ -39,5 +50,7 @@ public class User {
     }
 
     @NotBlank
+    @JsonIgnore
+    @Column(nullable = false)
     private String password;
 }

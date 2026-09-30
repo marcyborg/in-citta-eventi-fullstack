@@ -18,6 +18,11 @@ import java.util.TreeMap;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ProblemDetail> forbidden(Exception ex, HttpServletRequest request) {
+        return error(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(EventNotFoundException.class)
     public ResponseEntity<ProblemDetail> notFound(EventNotFoundException ex, HttpServletRequest request) {
         return error(HttpStatus.NOT_FOUND, ex.getMessage(), request);

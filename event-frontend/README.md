@@ -41,6 +41,10 @@ delle coordinate resta disponibile anche senza geocodifica, ma il caricamento
 della mappa dipende dalla connettività.
 
 Una posizione trovata nel dettaglio di un evento senza coordinate non viene
-salvata automaticamente. L'autenticazione abilita le operazioni di scrittura,
-ma il progetto non distingue proprietari o ruoli: le precauzioni e i limiti
+salvata automaticamente. Il login riceve anche il profilo USER/ADMIN;
+modifica e cancellazione sono mostrate solo al proprietario o a un ADMIN.
+Un accesso diretto al form di modifica non autorizzato mostra un messaggio
+senza permettere l'invio. Il backend resta la fonte autorevole dei permessi:
+nascondere un pulsante non sostituisce l'autorizzazione delle API.
+Le precauzioni e i limiti
 complessivi sono nel [README principale](../README.md).

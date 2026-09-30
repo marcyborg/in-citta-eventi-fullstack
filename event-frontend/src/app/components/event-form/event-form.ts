@@ -31,6 +31,7 @@ export class EventFormComponent implements OnInit {
   manualLatitude = '';
   manualLongitude = '';
   editingId?: number;
+  editingDenied = false;
   minDate = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
   ngOnInit(): void {
@@ -39,6 +40,7 @@ export class EventFormComponent implements OnInit {
       this.editingId = id;
       this.service.getById(id).subscribe({
         next: event => {
+          this.editingDenied = !this.auth.canManageEvent(event);
           this.event = { ...event, data: event.data.slice(0, 16) };
           this.manualLatitude = event.latitude?.toFixed(6) ?? '';
           this.manualLongitude = event.longitude?.toFixed(6) ?? '';
@@ -114,6 +116,10 @@ export class EventFormComponent implements OnInit {
   }
 
   save(form: NgForm): void {
+    if (this.editingId && !this.auth.canManageEvent(this.event)) {
+      this.error = 'Non hai il permesso di modificare questo evento.';
+      return;
+    }
     if (form.invalid || !this.event.titolo.trim() || !this.event.luogo.trim() ||
         !this.event.data || new Date(this.event.data).getTime() <= Date.now()) {
       form.control.markAllAsTouched();

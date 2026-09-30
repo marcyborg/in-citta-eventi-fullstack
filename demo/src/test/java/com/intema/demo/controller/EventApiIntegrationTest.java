@@ -18,15 +18,22 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@ActiveProfiles("h2")
+@ActiveProfiles({"h2", "test"})
 @AutoConfigureMockMvc
 class EventApiIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired EventRepository repository;
+    @Autowired com.intema.demo.repository.UserRepository users;
 
     @BeforeEach
     void clean() {
         repository.deleteAll();
+        users.deleteAll();
+        var user = new com.intema.demo.model.User();
+        user.setUsername("admin");
+        user.setPassword("test-fixture");
+        user.setRole(com.intema.demo.model.UserRole.ADMIN);
+        users.save(user);
     }
 
     private Event event(String titolo, String categoria, int days) {
@@ -70,7 +77,7 @@ class EventApiIntegrationTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void createUpdateDeleteAndValidation() throws Exception {
         mvc.perform(post("/api/events").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"titolo\":\" \",\"data\":\"2020-01-01T10:00:00\",\"luogo\":\"Milano\",\"categoria\":\"sport\"}"))
